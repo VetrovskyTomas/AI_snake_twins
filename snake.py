@@ -33,16 +33,20 @@ class Snake:
         x = random.randint(0, (self.game.w - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
         y = random.randint(0, (self.game.h - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
         self.head = Point(x, y)
-        new_snake = [self.head,
+        new_snake = [Point(self.head.x + (2 * BLOCK_SIZE), self.head.y), # new snake + 2 BLOCKS in front
+                     Point(self.head.x + BLOCK_SIZE, self.head.y),
+                     self.head,
                       Point(self.head.x - BLOCK_SIZE, self.head.y),
                       Point(self.head.x - (2 * BLOCK_SIZE), self.head.y)]
-
         for pt in new_snake:
             if self.game.is_collision(pt):
                 return self._place_snake()
-        self.snake = new_snake
+        self.snake = [self.head,
+                      Point(self.head.x - BLOCK_SIZE, self.head.y),
+                      Point(self.head.x - (2 * BLOCK_SIZE), self.head.y)]
 
     def reset(self):
+        self.agent.n_games += 1
         self.score = 0
         self.frame_iteration = 0
         self.total_score -= 5
@@ -61,7 +65,7 @@ class Snake:
             pygame.draw.rect(self.game.display, COL2, pygame.Rect(pt.x + 4, pt.y + 4, 12, 12))
             if not last == None:
                 pygame.draw.line(self.game.display, COL3, [last.x + 9, last.y + 9], [pt.x + 9, pt.y + 9], 4)
-        text_raw = " PLAYER " + str(self.id+1) + " Score: " + str(self.score) + " - Total: " + str(self.total_score) + " / " + str(self.game.score_win) + " > Human: " + str(self.human) + " " + info + " Train: " + str(self.agent.train) + " Deaths: " + str(self.agent.n_games)
+        text_raw = " PLAYER " + str(self.id+1) + " Score: " + str(self.score) + " - Total: " + str(self.total_score) + " / " + str(self.game.score_win) + " > Human: " + str(self.human) + " " + info + " Train: " + str(self.agent.train) + " Run: " + str(self.agent.n_games)
         return font.render(text_raw, True, COL2)
 
     def _update_ui(self, events, font):

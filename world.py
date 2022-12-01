@@ -9,7 +9,7 @@ pygame.init()
 font = pygame.font.Font('arial.ttf', 16)
 #font = pygame.font.SysFont('courier', 25)
 
-caption_info = '                     Wietrack Softwork (c)2022'
+caption_info = ' Wietrack Softwork (c)2022'
 
 # rgb colors
 WHITE = (255, 255, 255)
@@ -19,14 +19,16 @@ GREEN2 = (0, 255, 0)
 BLACK = (0,0,0)
 YELLOW = (255,255,0)
 GRAY = (55,55,55)
+GRAY2 = (155,155,155)
 
 BLOCK_SIZE = 20
 
 class GameWorld:
 
-    def __init__(self, w=640, h=480, players=2, speed = 5, score_win = 30):
+    def __init__(self, w=640, h=480, players=2, speed = 5, score_win = 30, obstacles = 0):
         self.w = w
         self.h = h
+        self.obstacles = obstacles
         self.speed = speed
         self.score_win = score_win
         # init display
@@ -40,8 +42,8 @@ class GameWorld:
 
     def update_title(self):
         pygame.display.set_caption(
-            'Snake Twins - player(s): ' + str(self.players) + ' speed: ' + str(self.speed) + ' score to win: ' + str(
-                self.score_win) + caption_info)
+            'Snake Twins - player(s): ' + str(self.players) + ' speed: ' + str(self.speed) + ' score to win: '
+            + str(self.score_win) +  ' obstacles: ' + str(self.obstacles) + caption_info)
 
     def reset(self):
         self.winner = -1
@@ -69,12 +71,33 @@ class GameWorld:
                 else:
                     if y == hb-1:
                         self.rocks[Point(x * BLOCK_SIZE, y * BLOCK_SIZE)] = 0
+        # random blocks
+        for i in range(self.obstacles):
+            self._place_rock()
+
+    def _place_rock(self):
+        x = random.randint(0, (self.w-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE
+        y = random.randint(0, (self.h-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE
+        r = Point(x, y)
+        distant = True
+        for p in self.get_neighbours(r):
+            if p in self.rocks:
+                distant = False
+                break
+        if distant:
+            self.rocks[r] = 1
+        else:
+            self._place_rock()
 
     def get_neighbours(self, pt):
-        return [Point(pt.x - 20, pt.y),
-                Point(pt.x + 20, pt.y),
-                Point(pt.x, pt.y - 20),
-                Point(pt.x, pt.y + 20)]
+        return [Point(pt.x - BLOCK_SIZE, pt.y),
+                Point(pt.x + BLOCK_SIZE, pt.y),
+                Point(pt.x, pt.y - BLOCK_SIZE),
+                Point(pt.x, pt.y + BLOCK_SIZE),
+                Point(pt.x - BLOCK_SIZE, pt.y- BLOCK_SIZE),
+                Point(pt.x + BLOCK_SIZE, pt.y- BLOCK_SIZE),
+                Point(pt.x - BLOCK_SIZE, pt.y + BLOCK_SIZE),
+                Point(pt.x + BLOCK_SIZE, pt.y + BLOCK_SIZE)]
 
     def _place_food(self):
         x = random.randint(0, (self.w-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE
@@ -97,7 +120,10 @@ class GameWorld:
 
         for pt in self.rocks:
             if self.rocks[pt] == 0:
-                pygame.draw.rect(self.display, GRAY, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
+                COL = GRAY
+            else:
+                COL = GRAY2
+            pygame.draw.rect(self.display, COL, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
 
         for i in range(self.players):
             self.snakes[i]._update_ui(events, font)
@@ -120,12 +146,14 @@ class GameWorld:
                 self.display.blit(text, [40, self.h / 2 + 72])
                 text = font.render("press [^] / [v] keys to increase / decrease score to win (" + str(self.score_win) + ")",True, WHITE)
                 self.display.blit(text, [40, self.h / 2 + 96])
-                text = font.render("press [<] / [>] keys to decrease / increase number of players (" + str(self.players) + ")", True, WHITE)
+                text = font.render("press [s] / [m] keys to set single / multi player mode (" + str(self.players) + ")", True, WHITE)
                 self.display.blit(text, [40, self.h / 2 + 120])
-                text = font.render("press [r] key to reset game", True, YELLOW)
+                text = font.render("press [<] / [>] keys to decrease / increase number of obstacles (" + str(self.obstacles) + ")", True, WHITE)
                 self.display.blit(text, [40, self.h / 2 + 144])
-                text = font.render("press [ESC] key to EXIT game", True, RED)
+                text = font.render("press [r] key to reset game", True, YELLOW)
                 self.display.blit(text, [40, self.h / 2 + 168])
+                text = font.render("press [ESC] key to EXIT game", True, RED)
+                self.display.blit(text, [40, self.h / 2 + 192])
             else:
                 if self.winner == 0:
                     COL = GREEN2
@@ -172,15 +200,27 @@ class GameWorld:
                         update_title = True
                         if self.score_win<5:
                             self.score_win = 5
-                    elif event.key == pygame.K_LEFT:
+                    elif event.key == pygame.K_s:
                         if self.players == 2:
                             self.players = 1
                             self.reset()
                         update_title = True
-                    elif event.key == pygame.K_RIGHT:
+                    elif event.key == pygame.K_m:
                         if self.players == 1:
                             self.players = 2
                             self.reset()
+                        update_title = True
+                    elif event.key == pygame.K_LEFT:
+                        self.obstacles -= 1
+                        if self.obstacles < 0:
+                            self.obstacles = 0
+                        self.reset()
+                        update_title = True
+                    elif event.key == pygame.K_RIGHT:
+                        self.obstacles += 1
+                        if self.obstacles >= 20:
+                            self.obstacles = 20
+                        self.reset()
                         update_title = True
                     elif event.key == pygame.K_r:
                         self.reset()

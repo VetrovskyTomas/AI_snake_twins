@@ -29,7 +29,6 @@ class Agent:
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
     def train_after_done(self, score):
-        self.n_games += 1
         self.train_long_memory()
 
         if score > self.record:
