@@ -16,6 +16,7 @@ GREEN1 = (0, 155, 0)
 GREEN2 = (0, 255, 0)
 GREEN3 = (0, 55, 0)
 YELLOW = (255,255,0)
+GRAY = (100,100,100)
 
 class Snake:
 
@@ -54,19 +55,21 @@ class Snake:
             self.total_score = 0
         self.direction = Direction.RIGHT
         self._place_snake()
+        self.dead = False
 
-    def _draw_snake(self, COL1, COL2, COL3, pt, last, info, font):
-        pygame.draw.rect(self.game.display, COL1, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
-        if not last == None:
-            pygame.draw.line(self.game.display, COL3, [last.x + 9, last.y + 9], [pt.x + 9, pt.y + 9], 4)
+    def _draw_snake(self, COL1, COL2, COL3, pt, last, index):
         if pt == self.head:
-            pygame.draw.rect(self.game.display, YELLOW, pygame.Rect(pt.x+4, pt.y+4, 12, 12))
+            pygame.draw.rect(self.game.display, COL1, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
+            if not last == None:
+                pygame.draw.line(self.game.display, COL3, [last.x + 9, last.y + 9], [pt.x + 9, pt.y + 9], 4)
+            pygame.draw.rect(self.game.display, YELLOW, pygame.Rect(pt.x + 4, pt.y + 4, 12, 12))
         else:
+            pygame.draw.rect(self.game.display, COL1, pygame.Rect(pt.x, pt.y, BLOCK_SIZE, BLOCK_SIZE))
+            if not last == None:
+                pygame.draw.line(self.game.display, COL3, [last.x + 9, last.y + 9], [pt.x + 9, pt.y + 9], 4)
             pygame.draw.rect(self.game.display, COL2, pygame.Rect(pt.x + 4, pt.y + 4, 12, 12))
             if not last == None:
                 pygame.draw.line(self.game.display, COL3, [last.x + 9, last.y + 9], [pt.x + 9, pt.y + 9], 4)
-        text_raw = " PLAYER " + str(self.id+1) + " Score: " + str(self.score) + " - Total: " + str(self.total_score) + " / " + str(self.game.score_win) + " > Human: " + str(self.human) + " " + info + " Train: " + str(self.agent.train) + " Run: " + str(self.agent.n_games)
-        return font.render(text_raw, True, COL2)
 
     def _update_ui(self, events, font):
         # switch ai/human
@@ -78,22 +81,31 @@ class Snake:
             if self.id == 1:
                 if event.key == pygame.K_2: # "2"
                     self.human = not self.human
-        #
+        # draw snake
+        if self.id % 2 == 1:
+            COL1 = BLUE1
+            COL2 = BLUE2
+            COL3 = BLUE3
+            info = "ASDW"
+        else:
+            COL1 = GREEN1
+            COL2 = GREEN2
+            COL3 = GREEN3
+            info = "<>^v"
+        text_raw = " PLAYER " + str(self.id + 1) + " Score: " + str(self.score) + " - Total: " + str(
+            self.total_score) + " / " + str(self.game.score_win) + " > Human: " + str(
+            self.human) + " " + info + " Train: " + str(self.agent.train) + " Run: " + str(self.agent.n_games)
+        self.game.display.blit(font.render(text_raw, True, COL2), [0, self.id*(self.game.h-BLOCK_SIZE)])
+        if self.dead:
+            COL1 = GRAY
+            COL2 = GRAY
+            COL3 = GRAY
         last = None
-        for pt in reversed(self.snake):
-            if self.id % 2 == 1:
-                COL1 = BLUE1
-                COL2 = BLUE2
-                COL3 = BLUE3
-                info = "ASDW"
-            else:
-                COL1 = GREEN1
-                COL2 = GREEN2
-                COL3 = GREEN3
-                info = "<>^v"
-            text = self._draw_snake(COL1, COL2, COL3, pt, last, info, font)
+        for i in range(len(self.snake)):
+            index = len(self.snake) - 1 - i
+            pt = self.snake[index]
+            self._draw_snake(COL1, COL2, COL3, pt, last, index)
             last = pt
-        self.game.display.blit(text, [0, self.id*(self.game.h-BLOCK_SIZE)])
 
     def move(self, action):
         self._move(action)  # update the head
@@ -256,6 +268,11 @@ class Snake:
                         final_move = [0, 0, 1]  # right
         return final_move
 
+    def die(self):
+        self.dead = True
+        self.snake.pop(0)
+        self.head = self.snake[0]
+
     def play_step(self, action):
         self.frame_iteration += 1
         # 2. move
@@ -266,53 +283,53 @@ class Snake:
         if self.is_collision() or self.frame_iteration > 100 * len(self.snake):
             game_over = True
             reward = -10
+            self.die()
             return reward, game_over, self.score
 
         # 4. place new food or just move
-        if self.head == self.game.food:
-            self.score += 1
-            self.total_score += 1
-            reward = 10
-            self.game._place_food()
-            if self.total_score == self.game.score_win:
-                self.game.winner = self.id
-                self.game.pause = True
-                game_over = True
-        else:
-            self.snake.pop()
+        if not self.dead:
+            if self.head == self.game.food:
+                self.score += 1
+                self.total_score += 1
+                reward = 10
+                self.game._place_food()
+                if self.total_score == self.game.score_win:
+                    self.game.winner = self.id
+                    self.game.pause = True
+                    game_over = True
+            else:
+                self.snake.pop()
 
         # 6. return game over and score
         return reward, game_over, self.score
 
     def run(self, events):
-        if not self.human and self.agent.train:
-            # get old state
-            state_old = self.get_state()
-
-            # get move
-            final_move = self.get_action(state_old, events)
-
-            # perform move and get new state
-            reward, done, score = self.play_step(final_move)
-            state_new = self.get_state()
-
-            # train short memory
-            self.agent.train_short_memory(state_old, final_move, reward, state_new, done)
-
-            # remember
-            self.agent.remember(state_old, final_move, reward, state_new, done)
-            if done:
-                self.agent.train_after_done(self.score)
-                if not self.game.winner == self.id:
-                    self.reset()
+        if self.dead:
+            self.snake.pop(0)
+            if len(self.snake) == 0:
+                self.reset()
         else:
-            # get old state
-            state_old = self.get_state()
-            # get move
-            final_move = self.get_action(state_old, events)
-            reward, done, score = self.play_step(final_move)
-            if done:
-                if not self.game.winner == self.id:
-                    self.reset()
-            #if score>25:
-            #    self.game.reset()
+            if not self.human and self.agent.train:
+                # get old state
+                state_old = self.get_state()
+
+                # get move
+                final_move = self.get_action(state_old, events)
+
+                # perform move and get new state
+                reward, done, score = self.play_step(final_move)
+                state_new = self.get_state()
+
+                # train short memory
+                self.agent.train_short_memory(state_old, final_move, reward, state_new, done)
+
+                # remember
+                self.agent.remember(state_old, final_move, reward, state_new, done)
+                if done:
+                    self.agent.train_after_done(self.score)
+            else:
+                # get old state
+                state_old = self.get_state()
+                # get move
+                final_move = self.get_action(state_old, events)
+                reward, done, score = self.play_step(final_move)

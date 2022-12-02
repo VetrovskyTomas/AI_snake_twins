@@ -142,7 +142,7 @@ class GameWorld:
                 self.display.blit(text, [40, self.h / 2 + 24])
                 text = font.render("press [f] key to change fullscreen / window mode", True, WHITE)
                 self.display.blit(text, [40, self.h / 2 + 48])
-                text = font.render("press [+] / [-] keys to increase / decrease game speed ("+str(self.speed)+")", True, WHITE)
+                text = font.render("press [+][p] / [-][o] keys to increase / decrease game speed ("+str(self.speed)+")", True, WHITE)
                 self.display.blit(text, [40, self.h / 2 + 72])
                 text = font.render("press [^] / [v] keys to increase / decrease score to win (" + str(self.score_win) + ")",True, WHITE)
                 self.display.blit(text, [40, self.h / 2 + 96])
@@ -183,10 +183,10 @@ class GameWorld:
                         self.reset()
                     else:
                         self.pause = not self.pause
-                if event.key == pygame.K_KP_PLUS:  # keypad plus
+                if event.key == pygame.K_KP_PLUS or event.key == pygame.K_p:  # keypad plus
                     self.speed += 3
                     update_title = True
-                if event.key == pygame.K_KP_MINUS:  # keypad minus
+                if event.key == pygame.K_KP_MINUS or event.key == pygame.K_o:  # keypad minus
                     self.speed -= 3
                     update_title = True
                     if self.speed<=0:
