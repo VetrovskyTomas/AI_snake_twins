@@ -10,8 +10,8 @@ LR = 0.001
 
 class Agent:
 
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, inputs, hidden, outputs, name):
+        self.name = name
         # training
         self.train = True
         self.total_score = 0
@@ -22,8 +22,8 @@ class Agent:
         self.rand_threshold = 80
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(11, 256, 3)
-        if self.model.load('model_id'+str(self.id)+'.pth'):
+        self.model = Linear_QNet(inputs, hidden, outputs)
+        if self.model.load('model_'+self.name+'.pth'):
             # if using trained model reduce randomness
             self.rand_threshold = 0
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
@@ -33,11 +33,11 @@ class Agent:
 
         if score > self.record:
             self.record = score
-            self.model.save('model_id'+str(self.id)+'.pth')
+            self.model.save('model_'+self.name+'.pth')
 
         self.total_score += score
         self.mean_score = self.total_score / self.n_games
-        print('Player', self.id,'- Game', self.n_games, 'Score', score, 'Record:', self.record, 'Mean:', self.mean_score)
+        print('Player ', self.name,'- Game', self.n_games, 'Score', score, 'Record:', self.record, 'Mean:', self.mean_score)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done)) # popleft if MAX_MEMORY is reached

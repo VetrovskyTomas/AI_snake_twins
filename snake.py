@@ -23,7 +23,7 @@ class Snake:
     def __init__(self, game, id):
         self.id = id
         self.human = False
-        self.agent = Agent(id)#Agent(self.id % 2, id)
+        self.agent = Agent(11, 256, 3, "snake_"+str(id))
         self.game = game
         self.total_score = 0
         self.frame_iteration = 0
