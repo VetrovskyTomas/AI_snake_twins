@@ -15,10 +15,12 @@ python game_snakes.py
 
 ## Game preview
 At the start of the training you can see that it's making random moves and is not heading for the food specifically. Here it is exploring it's surroundings…
-![Untrained Snakes](https://wietrack.cz/experiments/snake_twins/snake_untrained.gif)
+
+https://wietrack.cz/experiments/snake_twins/snake_untrained.gif
 
 After approximately 100 games (deaths)...
-![Trained Snakes](https://wietrack.cz/experiments/snake_twins/snake_trained.gif)
+
+https://wietrack.cz/experiments/snake_twins/snake_trained.gif
 
 
 
